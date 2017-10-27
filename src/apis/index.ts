@@ -1,3 +1,4 @@
+import { StudentApi } from "./studentApi";
 import { UserApi } from "./userApi";
 
-export { UserApi };
+export { StudentApi, UserApi, };

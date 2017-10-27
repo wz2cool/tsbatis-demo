@@ -1,12 +1,15 @@
 import * as bodyParser from "body-parser";
 import * as cookieParser from "cookie-parser";
 import * as express from "express";
+import { Container, inject, injectable } from "inversify";
 import * as logger from "morgan";
 import * as path from "path";
+import "reflect-metadata";
 import * as favicon from "serve-favicon";
 import * as swaggerJSDoc from "swagger-jsdoc";
 import * as swaggerUi from "swagger-ui-express";
 import * as apis from "./apis";
+import { Student } from "./db/entity/table/student";
 import * as routes from "./routes";
 
 export class Server {
@@ -18,6 +21,9 @@ export class Server {
     constructor() {
         this.app = express();
         this.config();
+        const u = new Student();
+        u.age = 20;
+        console.log(u);
     }
 
     private config(): void {
@@ -62,9 +68,10 @@ export class Server {
 
     private apis(): void {
         // visit: http://localhost:3000/api/users
-        this.app.use("/users", apis.UserApi.getRoute());
+        this.app.use("/apis/users", apis.UserApi.getRoute());
+        this.app.use("/apis/students", apis.StudentApi.getRoute());
     }
-
+    // visit: http://localhost:3000/api-docs
     private swagger(): void {
         const apiPath = path.join(__dirname, "apis", "*");
         const options = {

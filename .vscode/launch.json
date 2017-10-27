@@ -9,7 +9,6 @@
             "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceFolder}\\dist\\bin\\www.js",
-            "preLaunchTask": "gulp: build",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ]
