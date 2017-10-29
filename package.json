@@ -31,7 +31,7 @@
     "serve-favicon": "^2.4.5",
     "swagger-jsdoc": "^1.9.7",
     "swagger-ui-express": "^1.0.7",
-    "tsbatis": "^0.0.14"
+    "tsbatis": "^0.0.17"
   },
   "devDependencies": {
     "@types/body-parser": "^1.16.5",

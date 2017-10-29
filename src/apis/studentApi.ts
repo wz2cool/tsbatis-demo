@@ -1,5 +1,5 @@
 import * as express from "express";
-import { MappingProvider } from "tsbatis";
+import { ConnectionFactory, MappingProvider } from "tsbatis";
 import { Student } from "../db/entity/table/student";
 import { StudentMapper } from "../db/mapper/studentMapper";
 import { myContainer } from "../ioc/inversify.config";
@@ -28,23 +28,29 @@ export class StudentApi {
                 return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
             }
 
-            const mapper = myContainer.get<StudentMapper>(StudentMapper);
-            const transConn = await mapper.beginTransation();
+            const connectionFactory = myContainer.get<ConnectionFactory>(ConnectionFactory);
+            const transConn = await connectionFactory.getConnection();
             try {
-                const transMapper = new StudentMapper(transConn);
-                for (const student of students) {
-                    student.createTime = new Date();
-                    student.updateTime = new Date();
-                    const newStudentId = await transMapper.insert(student, true);
-                    newStudentIds.push(newStudentId);
+                try {
+                    const transMapper = new StudentMapper(transConn);
+                    for (const student of students) {
+                        student.createTime = new Date();
+                        student.updateTime = new Date();
+                        const newStudentId = await transMapper.insert(student, true);
+                        newStudentIds.push(newStudentId);
+                    }
+                    return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
+                } catch (e) {
+                    await transConn.rollback();
+                    return new Promise<number[]>((resolve, reject) => reject(e));
                 }
-                return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
-            } catch (e) {
-                await transConn.rollback();
-                return new Promise<number[]>((resolve, reject) => reject(e));
+            } catch (beginTransError) {
+                return new Promise<number[]>((resolve, reject) => reject(beginTransError));
+            } finally {
+                await transConn.release();
             }
-        } catch (beginTransError) {
-            return new Promise<number[]>((resolve, reject) => reject(beginTransError));
+        } catch (getConnError) {
+            return new Promise<number[]>((resolve, reject) => reject(getConnError));
         }
     }
 }

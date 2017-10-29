@@ -1,22 +1,14 @@
 import { Container } from "inversify";
 import * as mysql from "mysql";
+import * as path from "path";
 import "reflect-metadata";
-import { MysqlPool } from "tsbatis";
-import { StudentMapper } from "../db/mapper/studentMapper";
+import { ConnectionFactory, SqliteConnectionConfig } from "tsbatis";
 
-const pool = mysql.createPool({
-    host: "sql12.freemysqlhosting.net",
-    port: 3306,
-    // tslint:disable-next-line:object-literal-sort-keys
-    database: "sql12200910",
-    user: "sql12200910",
-    password: "ku8lhu9lAg",
-});
+const config = new SqliteConnectionConfig();
+config.filepath = path.join(__dirname, "../northwind.db");
 
-const mysqlPool = new MysqlPool(pool, true);
-const studentMapper = new StudentMapper(mysqlPool);
-
+const connectionFactory = new ConnectionFactory(config, true);
 const myContainer = new Container();
-myContainer.bind(StudentMapper).toConstantValue(studentMapper);
+myContainer.bind(ConnectionFactory).toConstantValue(connectionFactory);
 
 export { myContainer };

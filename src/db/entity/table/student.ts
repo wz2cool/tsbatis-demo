@@ -13,6 +13,6 @@ export class Student extends TableEntity {
     public updateTime: Date;
 
     public getTableName(): string {
-        return "students";
+        return "Students";
     }
 }
