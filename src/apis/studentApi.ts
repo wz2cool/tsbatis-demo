@@ -1,12 +1,16 @@
 import * as express from "express";
-import { ConnectionFactory, MappingProvider } from "tsbatis";
+import { ConnectionFactory, IConnection, MappingProvider } from "tsbatis";
 import { Student } from "../db/entity/table/student";
 import { StudentMapper } from "../db/mapper/studentMapper";
 import { myContainer } from "../ioc/inversify.config";
 
 export class StudentApi {
+    private readonly connectionFactory: ConnectionFactory;
+    constructor() {
+        this.connectionFactory = myContainer.get<ConnectionFactory>(ConnectionFactory);
+    }
 
-    public static getRoute(): express.Router {
+    public getRoute(): express.Router {
         const studentApi = express.Router();
         studentApi.post("/", (req, res, next) => {
             const newStudents = MappingProvider.toEntities<Student>(Student, req.body, false);
@@ -21,36 +25,36 @@ export class StudentApi {
         return studentApi;
     }
 
-    private static async addStudents(students: Student[]): Promise<number[]> {
-        try {
-            const newStudentIds: number[] = [];
-            if (!students || students.length === 0) {
-                return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
-            }
+    private async addStudents(students: Student[]): Promise<number[]> {
+        const newStudentIds: number[] = [];
+        if (!students || students.length === 0) {
+            return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
+        }
 
-            const connectionFactory = myContainer.get<ConnectionFactory>(ConnectionFactory);
-            const transConn = await connectionFactory.getConnection();
+        let transConn: IConnection;
+        try {
+            transConn = await this.connectionFactory.getConnection();
+            await transConn.beginTransaction();
             try {
-                try {
-                    const transMapper = new StudentMapper(transConn);
-                    for (const student of students) {
-                        student.createTime = new Date();
-                        student.updateTime = new Date();
-                        const newStudentId = await transMapper.insert(student, true);
-                        newStudentIds.push(newStudentId);
-                    }
-                    return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
-                } catch (e) {
-                    await transConn.rollback();
-                    return new Promise<number[]>((resolve, reject) => reject(e));
+                const transMapper = new StudentMapper(transConn);
+                for (const student of students) {
+                    student.createTime = new Date();
+                    student.updateTime = new Date();
+                    const newStudentId = await transMapper.insert(student, true);
+                    newStudentIds.push(newStudentId);
                 }
-            } catch (beginTransError) {
-                return new Promise<number[]>((resolve, reject) => reject(beginTransError));
-            } finally {
+                await transConn.commit();
+                return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
+            } catch (e) {
+                await transConn.rollback();
+                return new Promise<number[]>((resolve, reject) => reject(e));
+            }
+        } catch (e) {
+            return new Promise<number[]>((resolve, reject) => reject(e));
+        } finally {
+            if (transConn) {
                 await transConn.release();
             }
-        } catch (getConnError) {
-            return new Promise<number[]>((resolve, reject) => reject(getConnError));
         }
     }
 }

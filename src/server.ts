@@ -21,9 +21,6 @@ export class Server {
     constructor() {
         this.app = express();
         this.config();
-        const u = new Student();
-        u.age = 20;
-        console.log(u);
     }
 
     private config(): void {
@@ -68,8 +65,10 @@ export class Server {
 
     private apis(): void {
         // visit: http://localhost:3000/api/users
+        const studentApi = new apis.StudentApi();
+
         this.app.use("/apis/users", apis.UserApi.getRoute());
-        this.app.use("/apis/students", apis.StudentApi.getRoute());
+        this.app.use("/apis/students", studentApi.getRoute());
     }
     // visit: http://localhost:3000/api-docs
     private swagger(): void {
