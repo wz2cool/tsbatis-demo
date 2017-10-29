@@ -126,7 +126,6 @@ export class StudentApi {
             try {
                 const studentMapper = new StudentMapper(connection);
                 for (const student of students) {
-                    student.createTime = new Date();
                     student.updateTime = new Date();
                     await studentMapper.updateByKeySelective(student);
                 }
