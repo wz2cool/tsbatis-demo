@@ -1,5 +1,5 @@
 import * as express from "express";
-import { ConnectionFactory, DynamicQuery, IConnection, MappingProvider } from "tsbatis";
+import { ConnectionFactory, DynamicQuery, IConnection, MappingProvider, SortDescriptor, SortDirection } from "tsbatis";
 import { Student } from "../db/entity/table/student";
 import { StudentMapper } from "../db/mapper/studentMapper";
 import { myContainer } from "../ioc/inversify.config";
@@ -40,6 +40,8 @@ export class StudentApi {
             connection = await this.connectionFactory.getConnection();
             const studentMapper = new StudentMapper(connection);
             const query = DynamicQuery.createIntance<Student>();
+            const idDescSort = new SortDescriptor<Student>((s) => s.id, SortDirection.DESC);
+            query.addSorts(idDescSort);
             const students = await studentMapper.selectByDynamicQuery(query);
             return new Promise<Student[]>((resolve, reject) => resolve(students));
         } catch (e) {
