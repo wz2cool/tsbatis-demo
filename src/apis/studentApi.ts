@@ -73,58 +73,51 @@ export class StudentApi {
             return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
         }
 
-        let connection: IConnection;
         try {
-            connection = await this.connectionFactory.getConnection();
-            await connection.beginTransaction();
+            const connection = await this.connectionFactory.getConnection();
             try {
-                const studentMapper = new StudentMapper(connection);
-                for (const student of students) {
-                    student.createTime = new Date();
-                    student.updateTime = new Date();
-                    const effectRows = await studentMapper.insert(student);
-                    console.log("effectRows: ", effectRows);
-                    newStudentIds.push(student.id);
-                }
-                await connection.commit();
-                return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
-            } catch (e) {
-                await connection.rollback();
-                return new Promise<number[]>((resolve, reject) => reject(e));
-            }
-        } catch (e) {
-            return new Promise<number[]>((resolve, reject) => reject(e));
-        } finally {
-            if (connection) {
+                await connection.beginTransaction();
                 try {
+                    const studentMapper = new StudentMapper(connection);
+                    for (const student of students) {
+                        student.createTime = new Date();
+                        student.updateTime = new Date();
+                        const effectRows = await studentMapper.insert(student);
+                        console.log("effectRows: ", effectRows);
+                        newStudentIds.push(student.id);
+                    }
+                    await connection.commit();
                     await connection.release();
-                } catch (releaseError) {
-                    // nothing to do.
-                    console.error(releaseError);
+                    return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
+                } catch (e) {
+                    await connection.rollback();
+                    await connection.release();
+                    return new Promise<number[]>((resolve, reject) => reject(e));
                 }
+            } catch (beginTransError) {
+                await connection.release();
+                return new Promise<number[]>((resolve, reject) => reject(beginTransError));
             }
+        } catch (getConnError) {
+            return new Promise<number[]>((resolve, reject) => reject(getConnError));
         }
     }
 
     private async deleteStudent(id: number): Promise<void> {
-        let connection: IConnection;
         try {
-            connection = await this.connectionFactory.getConnection();
-            const studentMapper = new StudentMapper(connection);
-            const effectRows = await studentMapper.deleteByPrimaryKey(id);
-            console.log("effectRows: ", effectRows);
-            return new Promise<void>((resolve, reject) => resolve());
-        } catch (e) {
-            return new Promise<void>((resolve, reject) => reject(e));
-        } finally {
-            if (connection) {
-                try {
-                    await connection.release();
-                } catch (releaseError) {
-                    // nothing to do.
-                    console.error(releaseError);
-                }
+            const connection = await this.connectionFactory.getConnection();
+            try {
+                const studentMapper = new StudentMapper(connection);
+                const effectRows = await studentMapper.deleteByPrimaryKey(id);
+                console.log("effectRows: ", effectRows);
+                connection.release();
+                return new Promise<void>((resolve, reject) => resolve());
+            } catch (e) {
+                connection.release();
+                return new Promise<void>((resolve, reject) => reject(e));
             }
+        } catch (getConnError) {
+            return new Promise<void>((resolve, reject) => reject(getConnError));
         }
     }
 
@@ -133,79 +126,68 @@ export class StudentApi {
             return new Promise<void>((resolve, reject) => resolve());
         }
 
-        let connection: IConnection;
         try {
-            connection = await this.connectionFactory.getConnection();
-            await connection.beginTransaction();
+            const connection = await this.connectionFactory.getConnection();
             try {
-                const studentMapper = new StudentMapper(connection);
-                for (const student of students) {
-                    student.updateTime = new Date();
-                    const effectRows = await studentMapper.updateByPrimaryKeySelective(student);
-                    console.log("effectRows: ", effectRows);
+                await connection.beginTransaction();
+                try {
+                    const studentMapper = new StudentMapper(connection);
+                    for (const student of students) {
+                        student.updateTime = new Date();
+                        const effectRows = await studentMapper.updateByPrimaryKeySelective(student);
+                        console.log("effectRows: ", effectRows);
+                    }
+                    await connection.commit();
+                    await connection.release();
+                    return new Promise<void>((resolve, reject) => resolve());
+                } catch (e) {
+                    await connection.rollback();
+                    await connection.release();
+                    return new Promise<void>((resolve, reject) => reject(e));
                 }
-                await connection.commit();
-                return new Promise<void>((resolve, reject) => resolve());
             } catch (e) {
-                await connection.rollback();
+                await connection.release();
                 return new Promise<void>((resolve, reject) => reject(e));
             }
-        } catch (e) {
-            return new Promise<void>((resolve, reject) => reject(e));
-        } finally {
-            if (connection) {
-                try {
-                    await connection.release();
-                } catch (releaseError) {
-                    // nothing to do.
-                    console.error(releaseError);
-                }
-            }
+        } catch (getConnError) {
+            return new Promise<void>((resolve, reject) => reject(getConnError));
         }
     }
 
     private async getStudents(): Promise<Student[]> {
-        let connection: IConnection;
         try {
-            connection = await this.connectionFactory.getConnection();
-            const studentMapper = new StudentMapper(connection);
-            const query = DynamicQuery.createIntance<Student>();
-            const idDescSort = new SortDescriptor<Student>((s) => s.id, SortDirection.DESC);
-            query.addSorts(idDescSort);
-            const students = await studentMapper.selectByDynamicQuery(query);
-            return new Promise<Student[]>((resolve, reject) => resolve(students));
-        } catch (e) {
-            return new Promise<Student[]>((resolve, reject) => reject(e));
-        } finally {
-            if (connection) {
-                try {
-                    await connection.release();
-                } catch (releaseError) {
-                    // nothing to do.
-                    console.error(releaseError);
-                }
+            const connection = await this.connectionFactory.getConnection();
+            try {
+                const studentMapper = new StudentMapper(connection);
+                const query = DynamicQuery.createIntance<Student>();
+                const idDescSort = new SortDescriptor<Student>((s) => s.id, SortDirection.DESC);
+                query.addSorts(idDescSort);
+                const students = await studentMapper.selectByDynamicQuery(query);
+                await connection.release();
+                return new Promise<Student[]>((resolve, reject) => resolve(students));
+            } catch (e) {
+                await connection.release();
+                return new Promise<Student[]>((resolve, reject) => reject(e));
             }
+        } catch (getConnError) {
+            return new Promise<Student[]>((resolve, reject) => reject(getConnError));
         }
     }
 
     private async getStudent(id: number): Promise<Student> {
-        let connection: IConnection;
         try {
-            connection = await this.connectionFactory.getConnection();
-            const studentMapper = new StudentMapper(connection);
-            const students = await studentMapper.selectByPrimaryKey(id);
-            return new Promise<Student>((resolve, reject) => resolve(students[0]));
-        } catch (e) {
-            return new Promise<Student>((resolve, reject) => reject(e));
-        } finally {
-            if (connection) {
-                try {
-                    await connection.release();
-                } catch (releaseError) {
-                    // nothing to do.
-                    console.error(releaseError);
-                }
+            const connection = await this.connectionFactory.getConnection();
+            try {
+                const studentMapper = new StudentMapper(connection);
+                const students = await studentMapper.selectByPrimaryKey(id);
+                await connection.release();
+                return new Promise<Student>((resolve, reject) => resolve(students[0]));
+            } catch (e) {
+                await connection.release();
+                return new Promise<Student>((resolve, reject) => reject(e));
             }
+        } catch (getConnError) {
+            return new Promise<Student>((resolve, reject) => reject(getConnError));
         }
     }
 }
