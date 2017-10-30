@@ -26,6 +26,7 @@ export class StudentApi {
         studentApi.get("/", (req, res, next) => {
             this.getStudents()
                 .then((student) => {
+                    console.log("return json");
                     res.json(student);
                 }).catch((err) => {
                     res.status(500).send(err);
