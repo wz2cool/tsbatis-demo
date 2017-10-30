@@ -86,12 +86,10 @@ export class StudentApi {
                         console.log("effectRows: ", effectRows);
                         newStudentIds.push(student.id);
                     }
-                    await connection.commit();
-                    await connection.release();
+                    await connection.commitAndRelease();
                     return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
                 } catch (e) {
-                    await connection.rollback();
-                    await connection.release();
+                    await connection.rollbackAndRelease();
                     return new Promise<number[]>((resolve, reject) => reject(e));
                 }
             } catch (beginTransError) {
@@ -137,12 +135,10 @@ export class StudentApi {
                         const effectRows = await studentMapper.updateByPrimaryKeySelective(student);
                         console.log("effectRows: ", effectRows);
                     }
-                    await connection.commit();
-                    await connection.release();
+                    await connection.commitAndRelease();
                     return new Promise<void>((resolve, reject) => resolve());
                 } catch (e) {
-                    await connection.rollback();
-                    await connection.release();
+                    await connection.rollbackAndRelease();
                     return new Promise<void>((resolve, reject) => reject(e));
                 }
             } catch (e) {
