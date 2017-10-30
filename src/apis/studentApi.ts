@@ -25,6 +25,17 @@ export class StudentApi {
 
         studentApi.get("/", (req, res, next) => {
             this.getStudents()
+                .then((students) => {
+                    console.log("return json");
+                    res.json(students);
+                }).catch((err) => {
+                    res.status(500).send(err);
+                });
+        });
+
+        studentApi.get("/:id", (req, res, next) => {
+            const id = req.params.id;
+            this.getStudent(id)
                 .then((student) => {
                     console.log("return json");
                     res.json(student);
@@ -71,8 +82,9 @@ export class StudentApi {
                 for (const student of students) {
                     student.createTime = new Date();
                     student.updateTime = new Date();
-                    const newStudentId = await studentMapper.insert(student, true);
-                    newStudentIds.push(newStudentId);
+                    const effectRows = await studentMapper.insert(student);
+                    console.log("effectRows: ", effectRows);
+                    newStudentIds.push(student.id);
                 }
                 await connection.commit();
                 return new Promise<number[]>((resolve, reject) => resolve(newStudentIds));
@@ -99,7 +111,8 @@ export class StudentApi {
         try {
             connection = await this.connectionFactory.getConnection();
             const studentMapper = new StudentMapper(connection);
-            await studentMapper.deleteByPrimaryKey(id);
+            const effectRows = await studentMapper.deleteByPrimaryKey(id);
+            console.log("effectRows: ", effectRows);
             return new Promise<void>((resolve, reject) => resolve());
         } catch (e) {
             return new Promise<void>((resolve, reject) => reject(e));
@@ -128,7 +141,8 @@ export class StudentApi {
                 const studentMapper = new StudentMapper(connection);
                 for (const student of students) {
                     student.updateTime = new Date();
-                    await studentMapper.updateByKeySelective(student);
+                    const effectRows = await studentMapper.updateByPrimaryKeySelective(student);
+                    console.log("effectRows: ", effectRows);
                 }
                 await connection.commit();
                 return new Promise<void>((resolve, reject) => resolve());
@@ -162,6 +176,27 @@ export class StudentApi {
             return new Promise<Student[]>((resolve, reject) => resolve(students));
         } catch (e) {
             return new Promise<Student[]>((resolve, reject) => reject(e));
+        } finally {
+            if (connection) {
+                try {
+                    await connection.release();
+                } catch (releaseError) {
+                    // nothing to do.
+                    console.error(releaseError);
+                }
+            }
+        }
+    }
+
+    private async getStudent(id: number): Promise<Student> {
+        let connection: IConnection;
+        try {
+            connection = await this.connectionFactory.getConnection();
+            const studentMapper = new StudentMapper(connection);
+            const students = await studentMapper.selectByPrimaryKey(id);
+            return new Promise<Student>((resolve, reject) => resolve(students[0]));
+        } catch (e) {
+            return new Promise<Student>((resolve, reject) => reject(e));
         } finally {
             if (connection) {
                 try {

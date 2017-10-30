@@ -1,5 +1,4 @@
 import { Container } from "inversify";
-import * as mysql from "mysql";
 import * as path from "path";
 import "reflect-metadata";
 import { ConnectionFactory, SqliteConnectionConfig } from "tsbatis";
