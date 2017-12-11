@@ -1,13 +1,13 @@
 import { column, TableEntity } from "tsbatis";
 
 export class Order extends TableEntity {
-    @column("id", true, false)
+    @column("Id", true, false)
     public id: number;
-    @column("employee_id")
+    @column("EmployeeId")
     public employeeId: number;
-    @column("customer_id")
+    @column("CustomerId")
     public customerId: number;
-    @column("order_date")
+    @column("OrderDate")
     public orderDate: Date;
     @column("shipped_date")
     public shippedDate: Date;
