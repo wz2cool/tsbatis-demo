@@ -1,7 +1,7 @@
 import { column, TableEntity } from "tsbatis";
 
 export class Order extends TableEntity {
-    @column("Id", true, false)
+    @column("Id", true, true)
     public id: number;
     @column("EmployeeId")
     public employeeId: number;

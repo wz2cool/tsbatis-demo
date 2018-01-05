@@ -1,7 +1,7 @@
 import { column, TableEntity } from "tsbatis";
 
 export class Product extends TableEntity {
-    @column("id", true, false)
+    @column("id", true, true)
     public id: number;
     @column("supplier_ids")
     public supplierIds: string;
